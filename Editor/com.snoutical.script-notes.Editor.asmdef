@@ -1,0 +1,16 @@
+{
+    "name": "com.snoutical.script-notes.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:c5fa9a68114e8194898789df2594c5ba"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
