@@ -5,10 +5,8 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-// TODO make the names pretty like in the editor
-// TODO make the right pane be a like wrap box or some shit
-// TODO decorate the labels nicely
 // TODO maybe do this with UIToolkit builder
+// TODO figure out why this prevents duplicates and what not
 namespace Snoutical.ScriptNotes
 {
     public class ScriptNotesWindow : EditorWindow
@@ -16,11 +14,10 @@ namespace Snoutical.ScriptNotes
         [MenuItem("Snoutical/Script Notes")]
         public static void CreateWindow()
         {
-            ScriptNotesWindow wnd = GetWindow<ScriptNotesWindow>();
+            ScriptNotesWindow wnd = GetWindowReference();
             wnd.titleContent = new GUIContent("Script Notes");
         }
 
-        private GameObject previous;
         private bool initialized;
         private VisualElement rightPane;
         private ListView leftPane;
@@ -38,6 +35,7 @@ namespace Snoutical.ScriptNotes
 
             leftPane = new ListView();
             splitView.Add(leftPane);
+            //leftPane.viewDataKey = "notes-selection";
             leftPane.makeItem = () => new Label()
             {
                 style = { fontSize = 14 }
@@ -55,7 +53,22 @@ namespace Snoutical.ScriptNotes
             initialized = true;
         }
 
-        private void Update()
+        private void OnSelectionChange()
+        {
+            DefaultHandler();
+        }
+
+        private void OnHierarchyChange()
+        {
+            DefaultHandler();
+        }
+
+        private void OnProjectChange()
+        {
+            DefaultHandler();
+        }
+
+        private void DefaultHandler()
         {
             if (!initialized)
             {
@@ -66,30 +79,19 @@ namespace Snoutical.ScriptNotes
             // nothing selected should we clear it
             if (selected == null)
             {
-                // remove state
-                if (previous != null)
-                {
-                    ClearItems();
-                    previous = null;
-                }
-            }
-
-            // no work to do
-            if (previous == selected)
-            {
+                ClearItems();
                 return;
             }
 
+            // Always regenerate since its fast?
+            // maybe do a thing where we cache by name
             RegenerateItems(selected);
-            previous = selected;
         }
 
         private void ClearItems()
         {
             ClearPanesAndData();
-
-            ScriptNotesWindow wnd = GetWindow<ScriptNotesWindow>();
-            wnd.titleContent.text = "Script Notes";
+            SetTabTitle("Script Notes");
             leftPane.RefreshItems();
         }
 
@@ -109,6 +111,12 @@ namespace Snoutical.ScriptNotes
             var monoBehaviours = selectedObj.GetComponents<MonoBehaviour>();
             foreach (var mono in monoBehaviours)
             {
+                // did the script get deleted
+                if (mono == null)
+                {
+                    continue;
+                }
+
                 var monoType = mono.GetType();
                 if (processedScripts.Contains(monoType.Name))
                 {
@@ -129,10 +137,10 @@ namespace Snoutical.ScriptNotes
                 processedScripts.Add(monoType.Name);
             }
 
-            ScriptNotesWindow wnd = GetWindow<ScriptNotesWindow>();
-            wnd.titleContent.text = selectedObj.name + " Notes";
+            SetTabTitle(selectedObj.name + " Notes");
             leftPane.RefreshItems();
         }
+
 
         private void OnMonoSelectionChange(IEnumerable<object> selectedItems)
         {
@@ -185,6 +193,18 @@ namespace Snoutical.ScriptNotes
 
             // insert spaces before uppercase letters
             return Regex.Replace(input, "([a-z])([A-Z])", "$1 $2");
+        }
+
+        private static ScriptNotesWindow GetWindowReference()
+        {
+            // Always get a reference without focus to avoid interrupting keybinds
+            return GetWindow<ScriptNotesWindow>("Script Notes", false);
+        }
+
+        private static void SetTabTitle(string windowTitle)
+        {
+            ScriptNotesWindow wnd = GetWindowReference();
+            wnd.titleContent.text = windowTitle;
         }
     }
 }
